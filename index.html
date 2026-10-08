@@ -1,0 +1,798 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<title>Sleeve</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Sleeve: fifty years of Nigerian sound, judged by its cover. A scrolling visual history of Nigerian album art from 1970s Afrobeat to global Afrobeats.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sleeve">
+<meta property="og:description" content="Fifty years of Nigerian sound, judged by its cover. A scrolling visual history of Nigerian album art from 1970s Afrobeat to global Afrobeats.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sleeve: a fan of Nigerian album covers from Fela Kuti to Burna Boy.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sleeve">
+<meta name="twitter:description" content="Fifty years of Nigerian sound, judged by its cover.">
+<meta name="twitter:image" content="og-image.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Luckiest+Guy&family=Alfa+Slab+One&family=Krona+One&family=Archivo+Black&family=Bodoni+Moda:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Layout: one long crate. A constant record-label chrome (vinyl, paper, label-red, mono) sits over
+   full-screen era chapters; the page ground, text and accents cross-fade to each era's tokens as its
+   chapter crosses the middle of the viewport. Era tokens are injected from data/sleeves.json. */
+@property --era-bg        { syntax: "<color>"; inherits: true; initial-value: #F3EBDD; }
+@property --era-fg        { syntax: "<color>"; inherits: true; initial-value: #111111; }
+@property --era-accent-1  { syntax: "<color>"; inherits: true; initial-value: #C8321E; }
+@property --era-accent-2  { syntax: "<color>"; inherits: true; initial-value: #111111; }
+@property --era-on-accent { syntax: "<color>"; inherits: true; initial-value: #F3EBDD; }
+@property --era-panel     { syntax: "<color>"; inherits: true; initial-value: #111111; }
+@property --era-on-panel  { syntax: "<color>"; inherits: true; initial-value: #F3EBDD; }
+
+:root {
+  --vinyl: #111111;
+  --paper: #F3EBDD;
+  --label-red: #C8321E;
+  --ink-muted: #5A5147;
+  --paper-dim: #A89F91;
+  --groove: #2E2E2E;
+
+  --era-bg: #F3EBDD; --era-fg: #111111; --era-accent-1: #C8321E; --era-accent-2: #111111;
+  --era-on-accent: #F3EBDD; --era-panel: #111111; --era-on-panel: #F3EBDD;
+  --era-display-font: var(--mono);
+
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gut: clamp(16px, 4vw, 48px);
+  --bar-h: 56px;
+  --s1: 8px; --s2: 16px; --s3: 24px; --s4: 48px; --s5: 96px;
+
+  color-scheme: light;
+  transition: --era-bg .6s ease-in-out, --era-fg .6s ease-in-out, --era-accent-1 .6s ease-in-out,
+              --era-accent-2 .6s ease-in-out, --era-on-accent .6s ease-in-out,
+              --era-panel .6s ease-in-out, --era-on-panel .6s ease-in-out;
+}
+html[data-theme="label-dark"] {
+  --era-bg: #111111; --era-fg: #F3EBDD; --era-accent-1: #C8321E; --era-accent-2: #A89F91;
+  --era-on-accent: #F3EBDD; --era-panel: #F3EBDD; --era-on-panel: #111111;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--era-bg); color: var(--era-fg);
+  font: 400 15px/26px var(--mono); overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: inherit; }
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--era-fg); outline-offset: 3px; }
+
+/* fixed texture layers, behind everything */
+.tex, .grain { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.tex { opacity: 1; transition: opacity .28s linear; }
+.tex.is-out { opacity: 0; }
+.grain {
+  opacity: 0; transition: opacity .6s linear;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+main, .bar { position: relative; z-index: 1; }
+.wrap { padding-inline: var(--gut); }
+
+/* type helpers (label printing) */
+.t-nav  { font: 500 12px/16px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.t-cat  { font: 400 11px/16px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.t-cred { font: 400 12px/18px var(--mono); }
+.t-year { font: 700 14px/20px var(--mono); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.vfy {
+  display: inline-block; font: 700 9px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+  border: 1px solid currentColor; padding: 3px 4px 2px; vertical-align: 2px; white-space: nowrap;
+}
+
+/* ---------- label bar + timeline rail ---------- */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--vinyl); color: var(--paper);
+  display: flex; align-items: stretch; gap: var(--s3);
+  padding-inline: var(--gut); min-height: var(--bar-h);
+  border-bottom: 1px solid var(--groove);
+}
+.bar :focus-visible { outline-color: var(--paper); }
+.mark { display: flex; align-items: center; gap: var(--s1); font: 800 16px/1 var(--mono); letter-spacing: -.02em; text-decoration: none; }
+.mark i { width: 10px; height: 10px; border-radius: 50%; background: var(--label-red); display: block; }
+.now { margin-left: auto; align-self: center; color: var(--paper-dim); text-align: right; }
+.rail { display: none; flex: 1; min-width: 0; position: relative; }
+.segs { display: flex; height: 100%; }
+.seg {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  padding: 0 var(--s1) 6px; border-left: 1px solid var(--groove); text-decoration: none; color: var(--paper-dim);
+}
+.seg b { font: 700 12px/16px var(--mono); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.seg span { font: 400 10px/14px var(--mono); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg[aria-current="true"] { color: var(--paper); }
+.seg[aria-current="true"] b::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--label-red); margin-right: 6px; vertical-align: 1px; }
+a.seg:hover { color: var(--paper); }
+.seg.is-gap { background: repeating-linear-gradient(135deg, rgba(0,0,0,0) 0 6px, var(--groove) 6px 7px); }
+.seg.is-end { flex: 0 0 auto; border-left: 1px solid var(--groove); padding-right: 0; }
+.track { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--groove); }
+.track i { display: block; height: 100%; background: var(--label-red); transform-origin: left center; transform: scaleX(0); }
+@media (min-width: 900px) {
+  .rail { display: block; }
+  .now { display: none; }
+}
+
+/* ---------- mobile vinyl indicator ---------- */
+.spin {
+  position: fixed; z-index: 30; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: 64px; height: 64px; border-radius: 50%;
+}
+.spin :is(.spin-disc, .spin-label) { position: absolute; border-radius: 50%; }
+.spin-disc {
+  inset: 0; border: 2px solid var(--paper);
+  background:
+    radial-gradient(circle, rgba(0,0,0,0) 0 17px, var(--groove) 17px 18px, rgba(0,0,0,0) 18px 23px, var(--groove) 23px 24px, rgba(0,0,0,0) 24px),
+    conic-gradient(#111 0 25deg, #4a4a4a 45deg, #111 70deg 205deg, #4a4a4a 225deg, #111 250deg);
+  will-change: transform;
+}
+.spin-label {
+  inset: 18px; background: var(--label-red); color: var(--paper);
+  display: grid; place-items: center; font: 800 10px/1 var(--mono); letter-spacing: 0;
+}
+.spin:focus-visible { outline: 2px solid var(--era-fg); outline-offset: 3px; }
+.spin-menu {
+  position: fixed; z-index: 30; right: 14px; bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  background: var(--vinyl); color: var(--paper); border: 1px solid var(--groove);
+  padding: var(--s1) 0; min-width: 220px;
+}
+.spin-menu a { display: flex; gap: var(--s2); padding: 10px var(--s2); text-decoration: none; }
+.spin-menu a b { font-variant-numeric: tabular-nums; min-width: 4ch; }
+.spin-menu a[aria-current="true"] { color: var(--paper); box-shadow: inset 3px 0 0 var(--label-red); }
+.spin-menu a { color: var(--paper-dim); }
+.spin-menu :focus-visible { outline-color: var(--paper); outline-offset: -2px; }
+@media (min-width: 900px) { .spin, .spin-menu { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { overflow: hidden; }
+.hero-grid {
+  display: grid; gap: var(--s4) var(--s3); align-items: end;
+  padding-block: var(--s4) var(--s4);
+  min-height: min(calc(100svh - var(--bar-h)), 900px);
+}
+.hero-copy { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; order: 2; }
+.hero-title { font: 800 clamp(84px, 24vw, 132px)/.86 var(--mono); letter-spacing: -.06em; margin-left: -.04em; }
+.hero-tag { font: 500 clamp(15px, 2.2vw, 20px)/1.4 var(--mono); max-width: 34ch; }
+.hero-intro { max-width: 56ch; color: var(--ink-muted); }
+.cue { display: inline-flex; align-items: center; gap: var(--s1); text-decoration: none; margin-top: var(--s1); align-self: flex-start; padding-block: 6px; border-bottom: 2px solid var(--label-red); }
+.cue i { font-style: normal; display: inline-block; animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateY(4px); } }
+.fan { position: relative; order: 1; width: 100%; height: clamp(230px, 46vw, 470px); }
+.fan-item {
+  position: absolute; left: 50%; bottom: 6%; width: clamp(130px, 27vw, 300px); aspect-ratio: 1;
+  margin-left: calc(clamp(130px, 27vw, 300px) / -2);
+  transform-origin: 50% 135%; transform: rotate(0deg);
+  transition: transform .9s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--i) * 70ms);
+  box-shadow: 0 12px 24px rgba(0,0,0,.28); border-radius: 2px; overflow: hidden; display: block;
+}
+.fan.is-spread .fan-item { transform: rotate(var(--r)); }
+.fan-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fan-item:hover, .fan-item:focus-visible { z-index: 5; }
+@media (min-width: 900px) {
+  .hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); padding-block: var(--s5) var(--s4); }
+  .hero-copy { order: 1; }
+  .hero-title { font-size: clamp(120px, 12.5vw, 200px); }
+  .fan { order: 2; height: clamp(360px, 40vw, 560px); }
+  .fan-item { width: clamp(200px, 21vw, 300px); margin-left: calc(clamp(200px, 21vw, 300px) / -2); }
+}
+.terms { border-top: 2px solid var(--vinyl); display: grid; gap: 0; }
+.terms > div { padding-block: var(--s3); display: grid; gap: var(--s1); align-content: start; }
+.terms h2 { font: 800 clamp(24px, 4vw, 40px)/1 var(--mono); letter-spacing: -.03em; }
+.terms h2 small { font: 500 12px/16px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--label-red); margin-left: var(--s1); }
+.terms p { max-width: 52ch; }
+.terms > div + div { border-top: 1px solid var(--vinyl); }
+@media (min-width: 760px) {
+  .terms { grid-template-columns: 1fr 1fr; }
+  .terms > div + div { border-top: 0; border-left: 1px solid var(--vinyl); padding-left: var(--s3); }
+  .terms > div:first-child { padding-right: var(--s3); }
+}
+.hero-foot { padding-bottom: var(--s5); }
+
+/* ---------- chapters ---------- */
+.chapter { position: relative; scroll-margin-top: var(--bar-h); }
+.flip {
+  background: var(--vinyl); color: var(--paper-dim); display: flex; justify-content: space-between; gap: var(--s2);
+  padding: var(--s3) var(--gut);
+}
+.flip b { color: var(--paper); font-weight: 700; }
+.tcard {
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: calc(100svh - var(--bar-h)); display: flex; flex-direction: column; justify-content: flex-end;
+  padding: var(--s5) var(--gut) var(--s4);
+}
+.tcard-text { position: relative; z-index: 2; display: flex; flex-direction: column; gap: var(--s2); max-width: 1100px; }
+.tag { display: inline-flex; gap: var(--s2); align-items: center; }
+.tag b { background: var(--era-accent-1); color: var(--era-on-accent); padding: 3px 8px; font-weight: 700; }
+.tcard-title { font-family: var(--era-display-font); font-weight: 400; color: var(--era-accent-1); font-size: clamp(44px, 9.5vw, 136px); line-height: .96; text-wrap: balance; overflow-wrap: anywhere; }
+.tcard-blurb { font: 500 clamp(15px, 1.7vw, 19px)/1.5 var(--mono); max-width: 46ch; }
+.tcard-num {
+  position: absolute; z-index: 1; right: calc(var(--gut) - .04em); top: var(--s3);
+  font: 800 clamp(120px, 30vw, 380px)/.8 var(--mono); letter-spacing: -.06em; color: var(--era-accent-1); opacity: .2;
+  user-select: none;
+}
+.deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.deco i { position: absolute; display: block; }
+
+/* 1970s: comic-panel frame, painted blocks */
+[data-era="afrobeat-70s"] .tcard, [data-era="juju-80s"] .tcard { padding-inline: calc(var(--gut) + 22px); padding-bottom: calc(var(--s4) + 14px); }
+[data-era="afrobeat-70s"] .tcard-title { text-transform: uppercase; transform: rotate(-2deg); transform-origin: left bottom; text-shadow: .045em .045em 0 #F2E6C9; letter-spacing: .01em; }
+[data-era="afrobeat-70s"] .deco::after { content: ""; position: absolute; inset: var(--s2); border: 5px solid #2B1A10; }
+[data-era="afrobeat-70s"] .deco i:nth-child(1) { right: 6%; top: 10%; width: 38%; height: 44%; background: #A63A1E; clip-path: polygon(4% 9%, 96% 0, 100% 78%, 62% 100%, 0 88%); }
+[data-era="afrobeat-70s"] .deco i:nth-child(2) { right: 30%; top: 30%; width: 22%; height: 30%; background: #5C6B2E; clip-path: polygon(0 12%, 88% 0, 100% 90%, 14% 100%); }
+[data-era="afrobeat-70s"] .deco i:nth-child(3) { right: 10%; top: 38%; width: 16%; height: 20%; background: #F2E6C9; clip-path: polygon(10% 0, 100% 14%, 86% 100%, 0 82%); }
+[data-era="afrobeat-70s"] .tcard-num { color: #2B1A10; opacity: .9; right: 12%; top: 14%; font-size: clamp(90px, 20vw, 260px); z-index: 1; color: #F2E6C9; }
+
+/* 1980s: studio backdrop, gold drape, slab with drop shadow */
+[data-era="juju-80s"] .tcard-title { text-shadow: .05em .05em 0 #111; font-size: clamp(40px, 8.4vw, 120px); }
+[data-era="juju-80s"] .deco::after { content: ""; position: absolute; inset: var(--s2); border: 2px solid #D4A017; outline: 2px solid #D4A017; outline-offset: -10px; }
+[data-era="juju-80s"] .deco i:nth-child(1) { right: 0; top: 0; bottom: 0; width: clamp(56px, 16%, 220px); background: repeating-linear-gradient(90deg, #D4A017 0 12px, #9C7410 12px 17px, #F0CF6A 17px 22px, #B98A12 22px 30px); }
+[data-era="juju-80s"] .deco i:nth-child(2) { right: clamp(56px, 16%, 220px); top: 0; bottom: 0; width: 46%; background: radial-gradient(ellipse at 60% 34%, rgba(31,111,120,.95), rgba(31,111,120,0) 68%); }
+[data-era="juju-80s"] .tcard-num { right: calc(clamp(56px, 16%, 220px) + var(--s3)); color: #F5E9D3; opacity: .16; }
+
+/* late 1990s–2000s: chrome lettering, lens flare, jewel-case hinge */
+[data-era="cd-00s"] .tcard-title {
+  text-transform: uppercase; font-size: clamp(27px, 6.2vw, 92px); line-height: 1.08; letter-spacing: -.01em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C0C6CC 36%, #6F7780 50%, #E8ECEF 58%, #C0C6CC 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 14px rgba(30,91,255,.6));
+}
+[data-era="cd-00s"] .deco i:nth-child(1) { left: 0; top: 0; bottom: 0; width: clamp(10px, 1.6vw, 22px); background: repeating-linear-gradient(180deg, #C0C6CC 0 3px, #5d646b 3px 6px); opacity: .8; }
+[data-era="cd-00s"] .deco i:nth-child(2) { right: -8%; top: -18%; width: min(70vw, 760px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #FFFFFF 0 2%, rgba(30,91,255,.9) 9%, rgba(30,91,255,.28) 34%, rgba(30,91,255,0) 66%); }
+[data-era="cd-00s"] .deco i:nth-child(3) { right: 0; left: 30%; top: 18%; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,0), #FFFFFF 62%, rgba(255,255,255,0)); }
+[data-era="cd-00s"] .tcard-num { color: #C0C6CC; opacity: .14; }
+
+/* 2010s: flat colour blocking */
+[data-era="afrobeats-10s"] .tcard-title { color: var(--era-fg); letter-spacing: -.035em; font-size: clamp(46px, 11vw, 160px); line-height: .9; }
+[data-era="afrobeats-10s"] .deco i:nth-child(1) { right: 0; top: 0; width: 44%; height: 58%; background: #FF7A1A; }
+[data-era="afrobeats-10s"] .deco i:nth-child(2) { right: 30%; top: 18%; width: min(34vmin, 300px); aspect-ratio: 1; border-radius: 50%; background: #FF3D8B; }
+[data-era="afrobeats-10s"] .deco i:nth-child(3) { right: 0; top: 34%; width: min(26vmin, 240px); aspect-ratio: 1; border-radius: 100% 0 0 0; background: #2DB34A; }
+[data-era="afrobeats-10s"] .tcard-num { color: #161412; opacity: 1; right: 4%; top: 6%; font-size: clamp(70px, 14vw, 200px); z-index: 1; }
+
+/* 2020s: quiet, cinematic */
+[data-era="global-20s"] .tcard-title { font-style: italic; color: var(--era-fg); font-size: clamp(48px, 8vw, 112px); letter-spacing: -.01em; }
+[data-era="global-20s"] .tcard-text { gap: var(--s3); }
+[data-era="global-20s"] .deco i:nth-child(1) { right: 12%; top: 0; bottom: 0; width: 22%; background: #3F4A3A; }
+[data-era="global-20s"] .deco i:nth-child(2) { right: calc(23% - min(15vmin, 130px)); top: 22%; width: min(30vmin, 260px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #E8E1D6 0, #9C988F 30%, #4A4A4C 62%, #1E1E20 100%); }
+[data-era="global-20s"] .deco i:nth-child(3) { right: 12%; top: calc(22% + min(34vmin, 300px)); width: 22%; height: 3px; background: #D7F25C; }
+[data-era="global-20s"] .tcard-num { opacity: .1; color: #E8E1D6; left: var(--gut); right: auto; }
+
+/* chapter body */
+.cbody { content-visibility: auto; contain-intrinsic-size: auto 2600px; padding-bottom: var(--s5); }
+.block { padding-top: var(--s5); display: grid; gap: var(--s3); }
+.block-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); border-top: 2px solid var(--era-fg); padding-top: var(--s1); }
+.essay-grid { display: grid; gap: var(--s3); }
+.essay { display: grid; gap: var(--s3); max-width: 64ch; }
+.essay p:first-child { font-weight: 500; }
+@media (min-width: 900px) { .essay-grid { grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); } }
+.aside { display: grid; gap: var(--s1); align-content: start; }
+.aside b { font: 800 40px/1 var(--mono); letter-spacing: -.04em; color: var(--era-accent-1); }
+.soon {
+  border: 2px dashed var(--era-fg); padding: var(--s4) var(--s3); display: grid; gap: var(--s1); max-width: 64ch;
+}
+.soon b { font-family: var(--era-display-font); font-weight: 400; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; color: var(--era-accent-1); }
+
+.spot { display: grid; gap: var(--s3); align-items: start; }
+@media (min-width: 900px) { .spot { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s4); } }
+.spot-art { padding-right: 9%; max-width: 560px; }
+.spot-notes { background: var(--era-panel); color: var(--era-on-panel); padding: var(--s4) var(--s3); display: grid; gap: var(--s3); }
+.spot-notes h3 { font-family: var(--era-display-font); font-weight: 400; font-size: clamp(30px, 4.4vw, 56px); line-height: 1; text-wrap: balance; }
+[data-era="afrobeat-70s"] .spot-notes h3 { text-transform: uppercase; }
+[data-era="global-20s"] .spot-notes h3 { font-style: italic; }
+.spot-notes dl { display: grid; gap: var(--s3); }
+.spot-notes dt { font: 700 11px/16px var(--mono); letter-spacing: .1em; text-transform: uppercase; border-top: 1px solid currentColor; padding-top: var(--s1); margin-bottom: 4px; }
+.spot-notes dd { max-width: 60ch; }
+
+.crate { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(42vw, 150px), 1fr)); gap: var(--s4) var(--s3); }
+@media (min-width: 620px) { .crate { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--s4); } }
+.crate li { display: grid; gap: var(--s2); align-content: start; min-width: 0; padding-right: 8%; }
+.cap { display: grid; gap: 2px; min-width: 0; }
+.cap-top { display: flex; gap: var(--s1); align-items: baseline; flex-wrap: wrap; }
+.cap-top b { font: 700 15px/20px var(--mono); overflow-wrap: anywhere; }
+.cap .t-cat { margin-top: 4px; }
+.empty { aspect-ratio: 1; border: 2px dashed var(--era-fg); display: grid; place-items: center; text-align: center; padding: var(--s1); opacity: .8; }
+
+/* sleeve */
+.sleeve { position: relative; display: block; width: 100%; aspect-ratio: 1; text-align: left; -webkit-tap-highlight-color: transparent; }
+.disc {
+  position: absolute; inset: 3%; border-radius: 50%; box-shadow: 0 0 0 1px var(--paper-dim);
+  background: radial-gradient(circle, var(--paper) 0 1.6%, var(--lab, var(--label-red)) 1.6% 17%, #111 17% 26%, #2E2E2E 26% 26.6%, #111 26.6% 36%, #2E2E2E 36% 36.6%, #111 36.6% 46%, #2E2E2E 46% 46.6%, #111 46.6%);
+  transform: translateX(9%); transition: transform .42s cubic-bezier(.3,.7,.2,1);
+}
+.scard {
+  position: absolute; inset: 0; border-radius: 2px; overflow: hidden; display: block; background: #111;
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .2s ease-out, box-shadow .2s ease-out;
+}
+.scard img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.sheen { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255,255,255,.38), rgba(255,255,255,0) 58%); }
+@media (hover: hover) {
+  .sleeve:hover .scard { box-shadow: 0 12px 24px rgba(0,0,0,.28); }
+  .sleeve:hover .sheen { opacity: 1; }
+  .sleeve:hover .disc { transform: translateX(15%); }
+}
+.sleeve:focus-visible .scard { box-shadow: 0 12px 24px rgba(0,0,0,.28); }
+.sleeve.is-opening { z-index: 3; }
+.sleeve.is-opening .disc { transform: translateX(46%) rotate(50deg); }
+.sleeve.is-static .disc { transform: translateX(30%); }
+
+/* placeholder art (never imitates a real cover) */
+.art { position: absolute; inset: 0; container-type: inline-size; overflow: hidden; display: block; background: #111; }
+.art svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.art-plate { position: absolute; left: 0; right: 0; bottom: 0; padding: 5cqw 6cqw 6cqw; display: flex; flex-direction: column; gap: 1.6cqw; }
+.art-artist { font: 500 max(7.5px, 4cqw)/1.25 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.art-title { font-family: var(--era-display-font); font-size: calc(var(--ts, 11) * 1cqw); line-height: 1; overflow-wrap: anywhere; }
+.art-year { font: 700 max(8px, 4.4cqw)/1 var(--mono); letter-spacing: .04em; }
+.art-flag { position: absolute; top: 0; left: 0; background: #111111; color: #F3EBDD; font: 500 max(7px, 3.6cqw)/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 1.8cqw 2.6cqw; }
+.art[data-era="afrobeat-70s"] .art-plate { background: #F2E6C9; color: #2B1A10; border-top: 1.4cqw solid #2B1A10; }
+.art[data-era="afrobeat-70s"] .art-title { color: #A63A1E; text-transform: uppercase; }
+.art[data-era="juju-80s"] .art-plate { background: #4B2A6B; color: #F5E9D3; border-top: .8cqw solid #D4A017; }
+.art[data-era="juju-80s"] .art-title { color: #E0B02E; text-shadow: .06em .06em 0 #111; }
+.art[data-era="cd-00s"] .art-plate { color: #FFFFFF; background: linear-gradient(180deg, rgba(10,10,10,0), #0A0A0A 30%); padding-top: 12cqw; }
+.art[data-era="cd-00s"] .art-title { text-transform: uppercase; font-size: calc(var(--ts, 11) * .68cqw); line-height: 1.1; background: linear-gradient(180deg, #FFFFFF, #C0C6CC 45%, #7C848C 55%, #E8ECEF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.art[data-era="afrobeats-10s"] .art-plate { background: #FAF7F2; color: #161412; }
+.art[data-era="afrobeats-10s"] .art-title { letter-spacing: -.03em; }
+.art[data-era="global-20s"] .art-plate { color: #E8E1D6; background: linear-gradient(180deg, rgba(58,58,61,0), #2C2C2E 45%); padding-top: 12cqw; }
+.art[data-era="global-20s"] .art-title { font-style: italic; font-size: calc(var(--ts, 11) * .8cqw); }
+
+/* ---------- designers, closing ---------- */
+.section { padding-block: var(--s5); scroll-margin-top: var(--bar-h); }
+.section-title { font: 800 clamp(40px, 8vw, 104px)/.92 var(--mono); letter-spacing: -.05em; }
+.section-intro { max-width: 60ch; margin-top: var(--s3); }
+.makers { margin-top: var(--s4); border-top: 2px solid var(--era-fg); }
+.makers li { display: grid; gap: var(--s1) var(--s3); padding-block: var(--s3); border-bottom: 1px solid var(--era-fg); }
+.makers h3 { font: 800 clamp(22px, 3vw, 32px)/1.1 var(--mono); letter-spacing: -.03em; }
+.makers .role { color: var(--era-accent-1); font-weight: 700; }
+.makers p { max-width: 60ch; }
+.makers .known { display: grid; gap: 2px; }
+.makers .known li { display: block; padding: 0; border: 0; }
+.maker-body { display: grid; gap: var(--s2); align-content: start; min-width: 0; }
+.maker-body .t-cat { margin-bottom: 2px; }
+@media (min-width: 900px) { .makers li { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr) minmax(0, 3fr); } }
+.closing-essay { display: grid; gap: var(--s3); max-width: 64ch; margin-top: var(--s4); }
+.closing-essay p:first-child { font-size: clamp(16px, 1.8vw, 19px); line-height: 1.6; font-weight: 500; }
+.colophon { margin-top: var(--s5); border-top: 1px solid var(--era-accent-2); padding-top: var(--s3); display: grid; gap: var(--s3); color: var(--era-accent-2); }
+.colophon p { max-width: 70ch; }
+.colophon strong { color: var(--era-fg); font-weight: 700; }
+.sources { display: flex; flex-wrap: wrap; gap: 4px var(--s2); }
+.sources a { color: var(--era-fg); }
+.end-pad { height: 96px; }
+
+/* ---------- detail view ---------- */
+dialog.detail {
+  border: 0; padding: 0; width: min(1040px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px);
+  background: var(--era-bg); color: var(--era-fg); overflow: auto;
+}
+dialog.detail::backdrop { background: rgba(17,17,17,.78); }
+.d-grid { display: grid; }
+.d-art { padding: var(--s3) calc(var(--s3) + 22%) var(--s3) var(--s3); background: var(--era-panel); }
+.d-info { padding: var(--s3); display: grid; gap: var(--s3); align-content: start; min-width: 0; }
+.d-head { display: grid; gap: var(--s1); padding-right: 48px; }
+.d-title { font-family: var(--era-display-font); font-weight: 400; font-size: clamp(30px, 5vw, 56px); line-height: 1; color: var(--era-accent-1); text-wrap: balance; overflow-wrap: anywhere; }
+.d-artist { font: 700 16px/22px var(--mono); }
+.d-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px var(--s2); border-block: 1px solid var(--era-fg); padding-block: var(--s2); }
+.d-facts dt { font: 700 11px/20px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.d-facts dd { overflow-wrap: anywhere; }
+.d-sub { font: 700 11px/16px var(--mono); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+.d-list { display: grid; gap: 4px; }
+.d-list li { display: grid; grid-template-columns: 2ch 1fr; }
+.d-list a { overflow-wrap: anywhere; }
+.listen { display: inline-flex; align-items: center; gap: var(--s1); padding: 10px 14px; font-weight: 700; text-decoration: none; background: var(--era-accent-1); color: var(--era-on-accent); justify-self: start; }
+.see { justify-self: start; color: var(--era-fg); text-underline-offset: 3px; }
+.listen.is-empty { background: none; color: var(--era-fg); border: 2px dashed var(--era-fg); font-weight: 400; }
+.d-close { position: absolute; top: var(--s2); right: var(--s2); width: 40px; height: 40px; display: grid; place-items: center; background: var(--era-fg); color: var(--era-bg); font: 700 18px/1 var(--mono); z-index: 2; }
+@media (min-width: 820px) {
+  .d-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+  .d-art { padding: var(--s4) calc(var(--s4) + 15%) var(--s4) var(--s4); align-self: stretch; display: grid; align-content: center; }
+  .d-info { padding: var(--s4); }
+}
+
+.load-error { padding: var(--s5) var(--gut); max-width: 60ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { transition: none; }
+  html { scroll-behavior: auto; }
+  .tex, .grain, .disc, .scard, .sheen, .fan-item { transition: none; }
+  .cue i { animation: none; }
+  .scard { transform: none; }
+}
+</style>
+</head><body>
+<div class="tex" id="tex" aria-hidden="true"></div>
+<div class="grain" id="grain" aria-hidden="true"></div>
+
+<header class="bar">
+  <a class="mark" href="#top"><i></i>Sleeve</a>
+  <nav class="rail" aria-label="Timeline, 1970 to today">
+    <div class="segs" id="segs"></div>
+    <div class="track"><i id="fill"></i></div>
+  </nav>
+  <span class="now t-cat" id="now" aria-live="polite">Intro</span>
+</header>
+
+<main id="main">
+  <section class="hero" id="top" data-theme-section="label">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="t-cat">A visual history · 1970 to today · five sides</p>
+        <h1 class="hero-title">Sleeve</h1>
+        <p class="hero-tag">Fifty years of Nigerian sound, judged by its cover.</p>
+        <p class="hero-intro" id="intro"></p>
+        <a class="cue t-nav" href="#era-1970s">Start in 1970 <i aria-hidden="true">↓</i></a>
+      </div>
+      <div class="fan" id="fan" aria-label="Five era sleeves"></div>
+    </div>
+    <div class="wrap hero-foot">
+      <div class="terms" id="terms"></div>
+    </div>
+  </section>
+
+  <div id="chapters"></div>
+
+  <section class="section" id="designers" data-theme-section="label">
+    <div class="wrap">
+      <p class="t-cat">Credits · the people behind the covers</p>
+      <h2 class="section-title">The Designers</h2>
+      <p class="section-intro" id="designers-intro"></p>
+      <!--
+        RESEARCH LIST FOR MICHAEL: people considered for this section but NOT shown on the page,
+        because the credit rests on one source or on memory. Check each against the original sleeve,
+        the artist's own posts, or Album Cover Bank (albumcoverbank.com) before adding.
+
+        CONFIRMED since the first build (credits now on the sleeves; candidates for a full profile here):
+        - Chuka Obi: album cover design, Twice as Tall (Burna Boy, 2020). Credited on the EU vinyl (Discogs 18562690).
+        - Lanre Williams (Willy's Art): illustration, Rave & Roses (Rema, 2022). Discogs vinyl credits plus his interview with The Native.
+        - Sajjad: artwork, African Giant (Burna Boy, 2019), per his OkayAfrica interview.
+        - Nwaka Okparaeke (photography) and Jade Adeyemi (art direction): The Year I Turned 21 (Ayra Starr, 2024), per Jade Adeyemi Studio.
+        - Adrian Boot (photography, Juju Music) and Peter Ashworth (photography, Synchro System), per Discogs.
+        - Lemi Ghariokwu at Kennis Music: Face 2 Face (Discogs design credit) and Jaga Jaga (signed on the cover).
+
+        1970s
+        - Peter Obe Photo Agency: front photograph, Expensive Shit (1975), and back cover, Alagbon Close (1974). Confirmed on the Nigerian pressings (Discogs).
+        - Okanlawon Banjoko: front cover, Sorrow Tears and Blood (1977), per the Discogs credits. A Discogs user comment gives the name as Babatunde Banjoko.
+        - Durotimi Ikujenyo: design concept, No Agreement (1977), per Discogs.
+        - Robert Stace: printer (England) of the Yellow Fever sleeve, not a designer.
+        1980s
+        - Isiaka Balogun / Young Star Photos: photography, Osondi Owendi (1984), per Discogs.
+        2010s
+        - Seyi Charles George: photography, Superstar (Wizkid, 2011). Confirmed on the Nigerian CD (Discogs 5279134).
+        - TCD Photography: Omo Baba Olowo (Davido, 2012). Wikipedia personnel list only.
+        - Peedi Picasso: L.I.F.E (Burna Boy, 2013). Wikipedia, citing BellaNaija's 17 July 2013 unveiling.
+        - August Udoh (photography) and UnravelGfx (album art): King of Queens (Yemi Alade, 2014). Wikipedia personnel list only.
+        - Kobmart: Sounds from the Other Side (Wizkid, 2017), per The Native.
+        - Lemi Ghariokwu: main cover of Moral Instruction (Falz, 2019) (from memory, not checked).
+        2020s
+        - Adrienne Raquel: photography, Born in the Wild (Tems, 2024), as listed by Models.com only.
+        - Niyi Okeowo: named in two articles as a leading cover designer; no specific cover confirmed.
+        - Dayo Cyrus: Laughter, Tears & Goosebumps (Fireboy DML, 2019), Thy Kingdom Come (Seyi Vibez, 2023), per Kurating only.
+        - Musa Ganiyy: The Palmwine Express and Clone Wars Vol. IV (Show Dem Camp, 2019), per Kurating only.
+        - Mariana Jaguite: art direction, 19 & Dangerous (Ayra Starr), per Kurating only (Kurating dates it 2019; the album is 2021).
+        - Richie Igunma: Boy Alone (Omah Lay, 2022), per Kurating only.
+        - Tomi Thomas: Hopeless Romantic (2020), named in It's Nice That.
+        - Athar Jaber (sculptor): M$NEY (Asake), per Afromixx only.
+        - From memory only, no cover confirmed: Daniel Obasi, Stephen Tayo, Kelechi Amadi-Obi, TY Bello, Olaolu Slawn.
+        2000s: apart from Ghariokwu's two Kennis sleeves, no designer or photographer could be named for any sleeve in that crate.
+      -->
+      <ul class="makers" id="makers"></ul>
+    </div>
+  </section>
+
+  <section class="section" id="closing" data-theme-section="label-dark">
+    <div class="wrap">
+      <p class="t-cat">Run-out groove</p>
+      <h2 class="section-title" id="closing-title"></h2>
+      <div class="closing-essay" id="closing-essay"></div>
+      <footer class="colophon" id="colophon"></footer>
+      <div class="end-pad"></div>
+    </div>
+  </section>
+</main>
+
+<button class="spin" id="spin" type="button" aria-expanded="false" aria-controls="spin-menu">
+  <span class="spin-disc" id="spin-disc"></span>
+  <span class="spin-label" id="spin-label">•</span>
+</button>
+<nav class="spin-menu t-nav" id="spin-menu" aria-label="Jump to an era" hidden></nav>
+
+<dialog class="detail" id="detail" aria-labelledby="d-title"></dialog>
+
+<script>
+(function () {
+  "use strict";
+  var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var rich = function (s) { return esc(s).replace(/\s*\[VERIFY\]/g, ' <span class="vfy">verify</span>'); };
+  var plain = function (s) { return String(s == null ? "" : s).replace(/\s*\[VERIFY\]/g, ""); };
+
+  var DATA, ERA = {}, SLEEVE = {}, uid = 0;
+  var SHORT = { "afrobeat-70s": "Afrobeat", "juju-80s": "Jùjú · Fújì · Highlife", "cd-00s": "Hip-hop · CD era", "afrobeats-10s": "Afrobeats", "global-20s": "Global" };
+  var RAIL_START = 1970;
+
+  fetch("data/sleeves.json").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(boot).catch(function (e) {
+    $("chapters").innerHTML = '<p class="load-error">The content file data/sleeves.json could not be loaded (' + esc(e.message) + '). The page needs that file beside it.</p>';
+  });
+
+  /* ---------- seeded shapes for placeholder art ---------- */
+  function rng(str) {
+    var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return function () { h += 0x6D2B79F5; var t = Math.imul(h ^ (h >>> 15), 1 | h); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function shapes(eraId, seed, accent) {
+    var r = rng(seed), n = function (a, b) { return Math.round(a + r() * (b - a)); }, id = "g" + (++uid), o = "";
+    if (eraId === "afrobeat-70s") {
+      var cols = ["#A63A1E", "#5C6B2E", "#F2E6C9", "#2B1A10"], k = n(0, 3);
+      o += '<rect width="240" height="240" fill="#D98E04"/>';
+      for (var i = 0; i < 3; i++) {
+        var x = n(8, 120), y = n(10, 70), w = n(70, 130), h = n(50, 90);
+        o += '<polygon points="' + x + ',' + (y + n(0, 14)) + ' ' + (x + w) + ',' + y + ' ' + (x + w - n(0, 18)) + ',' + (y + h) + ' ' + (x + n(0, 16)) + ',' + (y + h - n(0, 12)) + '" fill="' + cols[(k + i) % 4] + '" stroke="#2B1A10" stroke-width="3" stroke-linejoin="round"/>';
+      }
+      o += '<defs><pattern id="' + id + '" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1" fill="#2B1A10" fill-opacity=".28"/></pattern></defs><rect width="240" height="240" fill="url(#' + id + ')"/>';
+    } else if (eraId === "juju-80s") {
+      o += '<defs><radialGradient id="' + id + '" cx="' + n(35, 65) + '%" cy="32%" r="70%"><stop offset="0" stop-color="#2A8F99"/><stop offset=".6" stop-color="#1F6F78"/><stop offset="1" stop-color="#4B2A6B"/></radialGradient></defs>';
+      o += '<rect width="240" height="240" fill="url(#' + id + ')"/><ellipse cx="' + n(100, 140) + '" cy="96" rx="' + n(40, 56) + '" ry="' + n(54, 68) + '" fill="#F5E9D3" fill-opacity=".9"/>';
+      for (var j = 0; j < 9; j++) o += '<circle cx="' + n(14, 226) + '" cy="' + n(14, 150) + '" r="' + n(2, 5) + '" fill="#D4A017"/>';
+      o += '<rect x="8" y="8" width="224" height="224" fill="none" stroke="#D4A017" stroke-width="2"/>';
+    } else if (eraId === "cd-00s") {
+      var cx = n(120, 200), cy = n(40, 100);
+      o += '<defs><radialGradient id="' + id + '"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".12" stop-color="#1E5BFF"/><stop offset=".5" stop-color="#1E5BFF" stop-opacity=".3"/><stop offset="1" stop-color="#1E5BFF" stop-opacity="0"/></radialGradient>';
+      o += '<linearGradient id="' + id + 'b" x1="0" x2="1"><stop offset="0" stop-color="#6F7780"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#6F7780"/></linearGradient></defs>';
+      o += '<rect width="240" height="240" fill="#0A0A0A"/><circle cx="' + cx + '" cy="' + cy + '" r="130" fill="url(#' + id + ')"/>';
+      o += '<rect x="0" y="' + (cy - 1) + '" width="240" height="2" fill="#FFFFFF" fill-opacity=".8"/><rect x="' + n(16, 40) + '" y="' + n(110, 130) + '" width="' + n(90, 150) + '" height="10" fill="url(#' + id + 'b)"/>';
+      o += '<circle cx="' + n(50, 90) + '" cy="' + n(60, 100) + '" r="' + n(20, 34) + '" fill="none" stroke="#C0C6CC" stroke-width="3"/>';
+    } else if (eraId === "afrobeats-10s") {
+      var c = ["#FF7A1A", "#2DB34A", "#FF3D8B"], s = n(0, 2);
+      o += '<rect width="240" height="240" fill="' + c[s] + '"/><circle cx="' + n(90, 170) + '" cy="' + n(60, 100) + '" r="' + n(46, 64) + '" fill="' + c[(s + 1) % 3] + '"/><rect x="' + n(0, 30) + '" y="' + n(90, 120) + '" width="' + n(60, 110) + '" height="60" fill="' + c[(s + 2) % 3] + '"/>';
+    } else {
+      var sx = n(80, 170), sy = n(60, 100), sr = n(30, 46);
+      o += '<defs><radialGradient id="' + id + '" cx="34%" cy="30%" r="80%"><stop offset="0" stop-color="#E8E1D6"/><stop offset=".35" stop-color="#9C988F"/><stop offset=".7" stop-color="#4A4A4C"/><stop offset="1" stop-color="#1E1E20"/></radialGradient></defs>';
+      o += '<rect width="240" height="240" fill="#3A3A3D"/><rect x="' + n(0, 150) + '" y="0" width="' + n(50, 80) + '" height="240" fill="#3F4A3A"/>';
+      o += '<circle cx="' + sx + '" cy="' + sy + '" r="' + sr + '" fill="url(#' + id + ')"/><rect x="' + n(16, 60) + '" y="' + (sy + sr + n(10, 20)) + '" width="' + n(40, 110) + '" height="3" fill="' + (accent || "#D7F25C") + '"/>';
+    }
+    return '<svg viewBox="0 0 240 240" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">' + o + '</svg>';
+  }
+  function art(o) { /* o: {eraId, seed, artist, title, year, accent, sleeve} */
+    var s = o.sleeve;
+    if (s && s.imageStatus !== "placeholder" && s.imagePath) {
+      return '<img src="' + esc(s.imagePath) + '" alt="Cover of ' + esc(plain(s.title)) + ' by ' + esc(plain(s.artist)) + '" loading="lazy" decoding="async">';
+    }
+    var len = plain(o.title).length, ts = len > 20 ? 8 : len > 13 ? 9.5 : len > 8 ? 11 : 13.5;
+    return '<span class="art" data-era="' + esc(o.eraId) + '" style="--ts:' + ts + '">' + shapes(o.eraId, o.seed, o.accent) +
+      '<span class="art-plate"><span class="art-artist">' + esc(plain(o.artist)) + '</span><span class="art-title">' + esc(plain(o.title)) + '</span><span class="art-year">' + esc(o.year) + '</span></span>' +
+      '<span class="art-flag">Placeholder</span></span>';
+  }
+  function labelColour(eraId) { return ERA[eraId].theme.tokens["--era-label"]; }
+  function sleeveButton(s, extraClass) {
+    return '<button type="button" class="sleeve ' + (extraClass || "") + '" data-id="' + esc(s.id) + '" style="--lab:' + labelColour(s.eraId) + '" aria-haspopup="dialog" aria-label="' +
+      esc(plain(s.title) + " by " + plain(s.artist) + ", " + s.year + ". " + (s.imageStatus === "placeholder" ? "Placeholder artwork. " : "") + "Open details") + '">' +
+      '<span class="disc"></span><span class="scard">' + art({ eraId: s.eraId, seed: s.id, artist: s.artist, title: s.title, year: s.year, accent: s.placeholderAccent, sleeve: s }) + '<span class="sheen"></span></span></button>';
+  }
+  function credit(s) {
+    var d = s.designer, p = s.photographer, out = [];
+    if (d) out.push("Cover: " + d);
+    if (p && p !== d) out.push("Photo: " + p);
+    if (!out.length) out.push("Credit to be confirmed");
+    return out.join(" · ");
+  }
+  function catNo(s) { return "SLV-" + s.year + "-" + String(s._n).padStart(3, "0"); }
+
+  /* ---------- boot ---------- */
+  function boot(d) {
+    DATA = d;
+    var css = "";
+    d.eras.forEach(function (e) {
+      ERA[e.id] = e;
+      var t = e.theme.tokens, decl = "";
+      Object.keys(t).forEach(function (k) { if (/^--era-(bg|fg|accent-1|accent-2|on-accent|panel|on-panel|display-font)$/.test(k)) decl += k + ":" + t[k] + ";"; });
+      css += 'html[data-theme="' + e.id + '"],dialog[data-theme="' + e.id + '"]{' + decl + '}\nhtml [data-era="' + e.id + '"]{--era-display-font:' + t["--era-display-font"] + '}\n';
+    });
+    var st = document.createElement("style"); st.textContent = css; document.body.appendChild(st);
+    d.sleeves.forEach(function (s, i) { s._n = i + 1; SLEEVE[s.id] = s; });
+
+    $("intro").textContent = d.site.intro;
+    $("terms").innerHTML = d.site.terms.map(function (t) { return '<div><h2>' + esc(t.term) + '<small>' + esc(t.note) + '</small></h2><p>' + rich(t.text) + '</p></div>'; }).join("");
+
+    renderFan(); renderRail(); renderChapters(); renderDesigners(); renderClosing();
+    wire();
+  }
+
+  function renderFan() {
+    var n = DATA.eras.length, fan = $("fan");
+    fan.innerHTML = DATA.eras.map(function (e, i) {
+      var r = (i - (n - 1) / 2) * 13;
+      return '<a class="fan-item" href="#era-' + esc(e.anchor) + '" style="--i:' + i + ';--r:' + r + 'deg;z-index:' + (i + 1) + '" aria-label="' + esc(e.anchor + ": " + e.title) + '">' +
+        art({ eraId: e.id, seed: "fan" + e.id, artist: "Side " + e.side, title: e.anchor, year: e.years, sleeve: SLEEVE[e.featuredSleeveId] }) + '</a>';
+    }).join("");
+    if (RM) fan.classList.add("is-spread");
+    else requestAnimationFrame(function () { requestAnimationFrame(function () { fan.classList.add("is-spread"); }); });
+  }
+
+  function renderRail() {
+    var h = "", prevEnd = RAIL_START, menu = "";
+    DATA.eras.forEach(function (e) {
+      if (e.startYear > prevEnd) h += '<span class="seg is-gap" style="flex-grow:' + (e.startYear - prevEnd) + '" title="' + prevEnd + ' to ' + e.startYear + ': not covered yet" aria-hidden="true"></span>';
+      h += '<a class="seg" href="#era-' + esc(e.anchor) + '" data-era="' + esc(e.id) + '" style="flex-grow:' + (e.endYear - e.startYear) + '"><b>' + e.startYear + '</b><span>' + esc(SHORT[e.id] || e.title) + '</span></a>';
+      menu += '<a href="#era-' + esc(e.anchor) + '" data-era="' + esc(e.id) + '"><b>' + esc(e.anchor) + '</b><span>' + esc(SHORT[e.id] || e.title) + '</span></a>';
+      prevEnd = e.endYear;
+    });
+    h += '<a class="seg is-end" href="#designers" data-era="label"><b>Today</b><span>Designers</span></a>';
+    $("segs").innerHTML = h;
+    $("spin-menu").innerHTML = '<a href="#top" data-era="top"><b>↑</b><span>Top</span></a>' + menu + '<a href="#designers" data-era="designers"><b>№</b><span>The Designers</span></a>';
+  }
+
+  function head(label, right) { return '<div class="block-head t-cat"><span>' + esc(label) + '</span><span>' + esc(right || "") + '</span></div>'; }
+
+  function renderChapters() {
+    var total = DATA.eras.length;
+    $("chapters").innerHTML = DATA.eras.map(function (e, i) {
+      var mine = DATA.sleeves.filter(function (s) { return s.eraId === e.id; });
+      var done = e.status === "complete", feat = e.featuredSleeveId && SLEEVE[e.featuredSleeveId];
+      var h = '<section class="chapter" id="era-' + esc(e.anchor) + '" data-era="' + esc(e.id) + '" data-theme-section="' + esc(e.id) + '" aria-labelledby="t-' + esc(e.id) + '">';
+      h += '<div class="flip t-cat"><span>Side <b>' + esc(e.side) + '</b> · № ' + (i + 1) + ' of ' + total + '</span><span><b>' + esc(e.years) + '</b></span></div>';
+      h += '<div class="tcard"><div class="deco" aria-hidden="true"><i></i><i></i><i></i></div><span class="tcard-num" aria-hidden="true">' + esc(e.decade) + '</span>' +
+        '<div class="tcard-text"><p class="tag t-cat"><b>' + esc(e.years) + '</b><span>Side ' + esc(e.side) + '</span></p>' +
+        '<h2 class="tcard-title" id="t-' + esc(e.id) + '">' + esc(e.title) + '</h2><p class="tcard-blurb">' + rich(e.blurb) + '</p></div></div>';
+      h += '<div class="cbody wrap">';
+      /* b. essay */
+      h += '<div class="block">' + head("Liner notes", e.years) + '<div class="essay-grid"><div class="aside"><b>' + esc(e.anchor) + '</b><span class="t-cred">What was happening, and how it shaped the covers.</span></div>';
+      h += done ? '<div class="essay">' + e.essay.map(function (p) { return '<p>' + rich(p) + '</p>'; }).join("") + '</div>'
+                : '<div class="soon"><b>Coming soon</b><p>The essay for this era is not written yet. This first build covers the 1970s and the 2020s in full; this chapter has its title card and theme.</p></div>';
+      h += '</div></div>';
+      /* c. spotlight */
+      if (done && feat) {
+        h += '<div class="block">' + head("Spotlight", catNo(feat)) + '<div class="spot"><div class="spot-art">' + sleeveButton(feat) + '</div>' +
+          '<div class="spot-notes"><div><p class="t-year">' + feat.year + '</p><h3>' + esc(plain(feat.title)) + '</h3><p>' + rich(feat.artist) + '</p><p class="t-cred">' + rich(credit(feat)) + '</p></div><dl>' +
+          e.spotlight.map(function (n) { return '<div><dt>' + esc(n.heading) + '</dt><dd>' + rich(n.text) + '</dd></div>'; }).join("") + '</dl></div></div></div>';
+      }
+      /* d. crate */
+      h += '<div class="block">' + head("The crate", done ? mine.length + " sleeves" : "Coming soon") + '<ul class="crate">';
+      if (done) h += mine.map(function (s) {
+        return '<li>' + sleeveButton(s) + '<div class="cap"><div class="cap-top"><span class="t-year">' + s.year + '</span><b>' + esc(plain(s.title)) + '</b></div>' +
+          '<p class="t-cred">' + rich(s.artist) + '</p><p class="t-cred">' + rich(credit(s)) + '</p><p class="t-cat">' + catNo(s) + ' · ' + (s.imageStatus === "placeholder" ? "placeholder art" : esc(s.imageStatus)) + '</p></div></li>';
+      }).join("");
+      else for (var k = 0; k < 6; k++) h += '<li><div class="empty t-cat">Coming soon</div></li>';
+      h += '</ul></div>';
+      h += '</div></section>';
+      return h;
+    }).join("");
+  }
+
+  function renderDesigners() {
+    $("designers-intro").textContent = DATA.site.designersIntro;
+    var owed = DATA.sleeves.filter(function (s) { return /not credited/i.test((s.designer || "") + (s.photographer || "")); }).map(function (s) { return plain(s.title) + " (" + s.year + ")"; });
+    var h = DATA.designers.map(function (m) {
+      return '<li><div><h3>' + esc(m.name) + '</h3><p class="role t-cred">' + esc(m.role) + '</p><p class="t-cat">' + esc(m.eras) + '</p></div>' +
+        '<div class="maker-body"><p>' + rich(m.profile) + '</p><div><p class="t-cat">Signature style</p><p>' + rich(m.signatureStyle) + '</p></div></div>' +
+        '<div><p class="t-cat">Notable covers</p><ul class="known t-cred">' + m.notableCovers.map(function (k) { return '<li>' + rich(k) + '</li>'; }).join("") + '</ul></div></li>';
+    }).join("");
+    if (owed.length) h += '<li><div><h3>Names still owed</h3><p class="role t-cred">Not credited</p></div><div class="maker-body"><p>No designer or photographer is named for at least part of these covers, on the sleeve, in the release data or in the press coverage checked. Their entries stay open rather than guessed.</p></div>' +
+      '<div><p class="t-cat">Sleeves</p><ul class="known t-cred">' + owed.map(function (k) { return '<li>' + esc(k) + '</li>'; }).join("") + '</ul></div></li>';
+    $("makers").innerHTML = h;
+  }
+
+  function renderClosing() {
+    var c = DATA.site.closing; $("closing-title").textContent = c.title;
+    $("closing-essay").innerHTML = c.paragraphs.map(function (p) { return '<p>' + rich(p) + '</p>'; }).join("");
+    var urls = {}, nVerify = 0;
+    DATA.sleeves.forEach(function (s) { (s.sources || []).forEach(function (u) { urls[u] = 1; }); nVerify += (s.verify || []).length; });
+    DATA.designers.forEach(function (m) { (m.sources || []).forEach(function (u) { urls[u] = 1; }); nVerify += (m.verify || []).length; });
+    var host = function (u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
+    $("colophon").innerHTML = '<p><strong>About the images.</strong> ' + esc(DATA.site.colophon) + '</p>' +
+      (nVerify ? '<p><strong>Open questions.</strong> ' + nVerify + ' details across the sleeves and credits are listed for checking. On the page they carry this tag: <span class="vfy">verify</span></p>' : '') +
+      '<div><p class="t-cat">Sources consulted</p><p class="sources t-cred">' + Object.keys(urls).map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(host(u)) + '</a>'; }).join("") + '</p></div>' +
+      '<p class="t-cat">Sleeve · SLV-0000 · all content in data/sleeves.json</p>';
+  }
+
+  /* ---------- detail view ---------- */
+  var dlg = $("detail"), lastBtn = null;
+  function openDetail(s) {
+    var facts = [["Year", String(s.year)], ["Label", s.label], ["Designer", s.designer || "Not listed"], ["Photographer", s.photographer || "Not listed"], ["Image", s.imageStatus === "placeholder" ? "Placeholder, not the original cover" : s.imageStatus + (s.imageCredit ? " · " + s.imageCredit : "")]];
+    var list = function (title, arr, link) {
+      if (!arr || !arr.length) return "";
+      return '<div><p class="d-sub">' + title + '</p><ul class="d-list t-cred">' + arr.map(function (x) {
+        return '<li><span aria-hidden="true">' + (link ? "↗" : "?") + '</span>' + (link ? '<a href="' + esc(x) + '" target="_blank" rel="noopener">' + esc(x.replace(/^https?:\/\/(www\.)?/, "")) + '</a>' : '<span>' + esc(x) + '</span>') + '</li>';
+      }).join("") + '</ul></div>';
+    };
+    dlg.setAttribute("data-theme", s.eraId);
+    dlg.innerHTML = '<button type="button" class="d-close" id="d-close" aria-label="Close details">×</button><div class="d-grid">' +
+      '<div class="d-art"><span class="sleeve is-static" style="--lab:' + labelColour(s.eraId) + '"><span class="disc"></span><span class="scard">' + art({ eraId: s.eraId, seed: s.id, artist: s.artist, title: s.title, year: s.year, accent: s.placeholderAccent, sleeve: s }) + '</span></span></div>' +
+      '<div class="d-info"><div class="d-head"><p class="t-cat">' + catNo(s) + ' · ' + esc(ERA[s.eraId].years) + '</p><h2 class="d-title" id="d-title"' + (s.eraId === "global-20s" ? ' style="font-style:italic;color:var(--era-fg)"' : s.eraId === "afrobeat-70s" ? ' style="text-transform:uppercase"' : '') + '>' + esc(plain(s.title)) + '</h2><p class="d-artist">' + rich(s.artist) + '</p></div>' +
+      '<dl class="d-facts">' + facts.map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + rich(f[1]) + '</dd>'; }).join("") + '</dl>' +
+      '<div><p class="d-sub">Art-direction notes</p><p>' + rich(s.artNotes) + '</p></div>' +
+      (s.listenUrl ? '<a class="listen t-nav" href="' + esc(s.listenUrl) + '" target="_blank" rel="noopener">Listen ↗</a>' : '<span class="listen is-empty t-nav">Listen link not added yet</span>') +
+      (s.coverUrl ? '<a class="see t-cred" href="' + esc(s.coverUrl) + '" target="_blank" rel="noopener">See the original cover on ' + esc(s.coverUrl.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + ' ↗</a>' : '') +
+      list("To verify", s.verify, false) + list("Sources", s.sources, true) + '</div></div>';
+    dlg.showModal(); dlg.scrollTop = 0;
+    $("d-close").addEventListener("click", function () { dlg.close(); });
+  }
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", function () { if (lastBtn) { lastBtn.classList.remove("is-opening"); lastBtn.focus({ preventScroll: true }); } });
+
+  /* ---------- wiring: sleeves, tilt, scroll ---------- */
+  function wire() {
+    var main = $("main");
+    main.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("button.sleeve") : null; if (!b) return;
+      var s = SLEEVE[b.getAttribute("data-id")]; if (!s) return;
+      lastBtn = b;
+      if (RM) return openDetail(s);
+      b.classList.add("is-opening");
+      setTimeout(function () { openDetail(s); }, 430);
+    });
+    if (!RM && window.matchMedia("(hover: hover)").matches) {
+      main.addEventListener("pointermove", function (e) {
+        var b = e.target.closest ? e.target.closest("button.sleeve, .fan-item") : null; if (!b || b.classList.contains("fan-item")) return;
+        var r = b.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        b.style.setProperty("--ry", ((x - .5) * 14).toFixed(2) + "deg"); b.style.setProperty("--rx", ((.5 - y) * 14).toFixed(2) + "deg");
+        b.style.setProperty("--mx", (x * 100).toFixed(1) + "%"); b.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+      }, { passive: true });
+      main.addEventListener("pointerout", function (e) {
+        var b = e.target.closest ? e.target.closest("button.sleeve") : null; if (!b || b.contains(e.relatedTarget)) return;
+        b.style.removeProperty("--rx"); b.style.removeProperty("--ry");
+      }, { passive: true });
+    }
+
+    var spin = $("spin"), menu = $("spin-menu");
+    var setMenu = function (open) { menu.hidden = !open; spin.setAttribute("aria-expanded", String(open)); };
+    spin.addEventListener("click", function () { setMenu(menu.hidden); });
+    menu.addEventListener("click", function (e) { if (e.target.closest("a")) setMenu(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !menu.hidden) { setMenu(false); spin.focus(); } });
+    document.addEventListener("click", function (e) { if (!menu.hidden && !menu.contains(e.target) && !spin.contains(e.target)) setMenu(false); });
+
+    var sections = [].slice.call(document.querySelectorAll("[data-theme-section]"));
+    var chapters = [].slice.call(document.querySelectorAll(".chapter"));
+    var total = DATA.eras[DATA.eras.length - 1].endYear - RAIL_START;
+    var fill = $("fill"), disc = $("spin-disc"), tex = $("tex"), grain = $("grain"), now = $("now"), lab = $("spin-label");
+    var current = null, currentSection = null, ticking = false, texTimer = 0;
+
+    function applyTheme(id, el) {
+      document.documentElement.setAttribute("data-theme", id);
+      var e = ERA[id], t = e ? e.theme.tokens : null;
+      var paint = function () {
+        tex.style.backgroundImage = t ? t["--era-texture"] : "none";
+        tex.style.backgroundSize = t ? t["--era-texture-size"] : "auto";
+        tex.classList.remove("is-out");
+      };
+      clearTimeout(texTimer);
+      if (RM) paint(); else { tex.classList.add("is-out"); texTimer = setTimeout(paint, 280); }
+      grain.style.opacity = t ? t["--era-grain"] : 0;
+      var name = e ? e.anchor + " · " + (SHORT[id] || e.title) : el.id === "designers" ? "The Designers" : el.id === "closing" ? "Closing" : "Intro";
+      now.textContent = name;
+      lab.textContent = e ? e.decade + "s" : "•";
+      spin.setAttribute("aria-label", "Jump to an era. Now showing: " + name);
+      var key = e ? id : el.id === "designers" ? "label" : "";
+      [].forEach.call(document.querySelectorAll(".seg[data-era]"), function (a) { if (a.getAttribute("data-era") === key) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+      var mkey = e ? id : el.id;
+      [].forEach.call(menu.querySelectorAll("a"), function (a) { if (a.getAttribute("data-era") === mkey) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+    }
+
+    function frame() {
+      ticking = false;
+      var mid = window.innerHeight / 2, found = sections[0];
+      for (var i = 0; i < sections.length; i++) { if (sections[i].getBoundingClientRect().top <= mid) found = sections[i]; }
+      var id = found.getAttribute("data-theme-section");
+      if (found !== currentSection) { currentSection = found; current = id; applyTheme(id, found); }
+      /* rail playhead: piecewise by chapter */
+      var x = 0;
+      for (var k = 0; k < chapters.length; k++) {
+        var r = chapters[k].getBoundingClientRect(), e = DATA.eras[k];
+        if (r.top <= mid) { var p = Math.min(1, (mid - r.top) / r.height); x = (e.startYear - RAIL_START + p * (e.endYear - e.startYear)) / total; }
+      }
+      fill.style.transform = "scaleX(" + x.toFixed(4) + ")";
+      var doc = document.documentElement, sp = window.scrollY / Math.max(1, doc.scrollHeight - window.innerHeight);
+      disc.style.transform = "rotate(" + (sp * 1440).toFixed(1) + "deg)";
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    frame();
+  }
+})();
+</script>
+
+</body></html>
